@@ -1,0 +1,860 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: VPC Master Template
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment
+        Parameters:
+          - env
+          - class
+          - owner
+      -
+        Label:
+          default: Or specific CIDRs for VPC and Subnets if registered range == 256, otherwise ignored
+        Parameters:
+          - vpcCIDR
+      -
+        Label:
+          default: Public Subnet Configuration (Subset of VPC)
+        Parameters:
+          - subnetPublicACIDR
+          - subnetPublicBCIDR
+          - subnetPublicCCIDR
+      -
+        Label:
+          default: Private App Tier Subnet Configuration (Subset of VPC)
+        Parameters:
+          - subnetPrivateAppACIDR
+          - subnetPrivateAppBCIDR
+          - subnetPrivateAppCCIDR
+      -
+        Label:
+          default: Private Database Tier Subnet Configuration (Subset of VPC)
+        Parameters:
+          - subnetPrivateDbACIDR
+          - subnetPrivateDbBCIDR
+          - subnetPrivateDbCCIDR
+
+      
+    ParameterLabels:
+      env:
+        default: Environment
+      class:
+        default: Data Classification
+      owner:
+        default: Resource Owner
+      vpcCIDR:
+        default: VPC CIDR
+      subnetPublicACIDR:
+        default: Subnet Public A CIDR
+      subnetPublicBCIDR:
+        default: Subnet Public B CIDR
+      subnetPublicCCIDR:
+        default: Subnet Public C CIDR
+      subnetPrivateAppACIDR:
+        default: Subnet Private App Tier AZ-A CIDR
+      subnetPrivateAppBCIDR:
+        default: Subnet Private App Tier AZ-B CIDR
+      subnetPrivateAppCCIDR:
+        default: Subnet Private App Tier AZ-C CIDR
+      subnetPrivateDbACIDR:
+        default: Subnet Private Database Tier AZ-A CIDR
+      subnetPrivateDbBCIDR:
+        default: Subnet Private Database Tier AZ-B CIDR
+      subnetPrivateDbCCIDR:
+        default: Subnet Private Database Tier AZ-C CIDR
+      keyName:
+        default: EC2 keypair used for NAT instance
+      amazonLinuxNatAmiId:
+        default: AMI to use for NAT
+      flowlogBucketArn:
+        default: Bucket ARN for VPC Flow Logs. Leave blank for no flow logs
+
+Parameters:
+  env:
+    Type: String
+    Default: "TEST"
+    AllowedValues:
+    - "TEST"
+    - "DEV"
+    - "DEMO"
+    - "STAGING"
+    - "PROD"
+
+  class:
+    Type: String
+    Default: "PRIVATE"
+    AllowedValues:
+    - "PRIVATE"
+    - "PUBLIC"
+    - "RESTRICTED"
+    - "CONFIDENTIAL"
+
+  owner:
+    Type: String
+
+  prefix:
+    Type: String
+
+  vpcCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.0.0/16
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPublicACIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.10.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPublicBCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.20.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPublicCCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.30.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPrivateAppACIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.110.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPrivateAppBCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.120.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPrivateAppCCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: 10.10.130.0/24
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPrivateDbACIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: "6.6.6.6/6" # NoValue equivalent
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPrivateDbBCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: "6.6.6.6/6" # NoValue equivalent
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  subnetPrivateDbCCIDR:
+    Type: String
+    Description: Registered Range == 256
+    Default: "6.6.6.6/6" # NoValue equivalent
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  keyName:
+    Type: String
+    Description: Name of EC2 keypair used for NAT instance
+
+  amazonLinuxNatAmiId:
+    Type: AWS::EC2::Image::Id
+    Description: AMI of machine used for NAT
+    Default: ami-0b0eaeaa16fa45706
+
+  flowlogBucketArn:
+    Type: String
+    Description: ARN of Bucket to be used for VPC Flow Logs. Leave blank for no flow logs
+
+Conditions:
+  buildSubnetPrivateDbA: !Not [ !Equals [ !Ref subnetPrivateDbACIDR, "6.6.6.6/6"] ]
+  buildSubnetPrivateDbB: !Not [ !Equals [ !Ref subnetPrivateDbBCIDR, "6.6.6.6/6"] ]
+  buildSubnetPrivateDbC: !Not [ !Equals [ !Ref subnetPrivateDbCCIDR, "6.6.6.6/6"] ]
+  createVPCLogs: !Not [ !Equals [ !Ref flowlogBucketArn, ""] ]
+
+Resources:
+  FlowLog:
+    Type: AWS::EC2::FlowLog
+    Condition: createVPCLogs
+    Properties:
+      LogDestination: !Ref flowlogBucketArn
+      LogDestinationType: s3
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: ALL
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref vpcCIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["vpc", !Ref prefix]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "VPC"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+#
+# Internet Gateway for VPC
+#
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["igw", !Ref prefix]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Internet Gateway"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+#
+# Public Route Table
+#
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["rt", !Ref prefix, "public"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Public Route Table"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+#
+# Public Subnet NACL
+#
+
+  PublicNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["nacl", !Ref prefix, "public"]]
+        - Key: Desc
+          Value: Public Network NACL
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  InboundNACLEntryPublic:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      Icmp:
+        Code: "-1"
+        Type: "-1"
+
+  OutboundNACLEntryPublic:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      Icmp:
+        Code: "-1"
+        Type: "-1"
+
+# PUBLIC SUBNET
+# Availability Zone A
+#
+  SubnetPublicA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      CidrBlock: !Ref subnetPublicACIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "public", "a"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Public AZ A Subnet"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+        - Key: Tier
+          Value: Public
+  SubnetPublicANACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      SubnetId: !Ref SubnetPublicA
+
+  SubnetPublicARouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref SubnetPublicA
+
+# PUBLIC SUBNET
+# Availability Zone B
+#
+
+  SubnetPublicB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      CidrBlock: !Ref subnetPublicBCIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "public", "b"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Public AZ B Subnet"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+        - Key: Tier
+          Value: Public
+  SubnetPublicBNACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      SubnetId: !Ref SubnetPublicB
+
+  SubnetPublicBRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref SubnetPublicB
+
+# PUBLIC SUBNET
+# Availability Zone C
+#
+
+  SubnetPublicC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      CidrBlock: !Ref subnetPublicCCIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "public", "c"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Public AZ C Subnet"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+        - Key: Tier
+          Value: Public
+  SubnetPublicCNACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      SubnetId: !Ref SubnetPublicC
+
+  SubnetPublicCRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref SubnetPublicC
+
+#### NAT ###
+  NatRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  NatInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+      - !Ref NatRole
+      Path: "/"
+
+  NatGatewaySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Security group for NATs
+      SecurityGroupIngress:
+        - CidrIp: 10.0.0.0/8
+          IpProtocol: "-1"
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: "-1"
+
+# NAT
+# Availability Zone A
+#
+  NatGatewayInstanceA:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref amazonLinuxNatAmiId
+      SubnetId: !Ref SubnetPublicA
+      InstanceType: "t3.nano"
+      KeyName: !Ref keyName
+      SecurityGroupIds:
+        - !Ref NatGatewaySecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${prefix}-nat-a
+        - Key: Desc
+          Value: "NAT Router for private subnets"
+        - Key: Owner
+          Value: !Ref owner
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+      SourceDestCheck: false
+      IamInstanceProfile: !Ref NatInstanceProfile
+
+  PrivateARouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["rt", !Ref prefix, "private", "a"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private" ,"A", "Route Table"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+
+  DefaultPrivateARoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateARouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref NatGatewayInstanceA
+
+# NAT
+# Availability Zone B
+#
+  NatGatewayInstanceB:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref amazonLinuxNatAmiId
+      SubnetId: !Ref SubnetPublicB
+      InstanceType: "t3.nano"
+      KeyName: !Ref keyName
+      SecurityGroupIds:
+        - !Ref NatGatewaySecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${prefix}-nat-b
+        - Key: Desc
+          Value: "NAT Router for private subnets"
+        - Key: Owner
+          Value: !Ref owner
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+      SourceDestCheck: false
+      IamInstanceProfile: !Ref NatInstanceProfile
+
+  PrivateBRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["rt", !Ref prefix, "private", "b"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private" ,"B", "Route Table"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+
+  DefaultPrivateBRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateBRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref NatGatewayInstanceB
+
+# NAT
+# Availability Zone C
+#
+  NatGatewayInstanceC:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref amazonLinuxNatAmiId
+      SubnetId: !Ref SubnetPublicC
+      InstanceType: "t3.nano"
+      KeyName: !Ref keyName
+      SecurityGroupIds:
+        - !Ref NatGatewaySecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${prefix}-nat-c
+        - Key: Desc
+          Value: "NAT Router for private subnets"
+        - Key: Owner
+          Value: !Ref owner
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+      SourceDestCheck: false
+      IamInstanceProfile: !Ref NatInstanceProfile
+
+  PrivateCRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["rt", !Ref prefix, "private", "c"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private" ,"C", "Route Table"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+
+  DefaultPrivateCRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateCRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref NatGatewayInstanceC
+
+# Private App SUBNETS
+# Availability Zone A
+
+  SubnetPrivateA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref subnetPrivateAppACIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "private", "a"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private", "A", "Subnet"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  SubnetPrivateANACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref SubnetPrivateA
+
+  SubnetPrivateARouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateARouteTable
+      SubnetId: !Ref SubnetPrivateA
+
+# Private App SUBNETS
+# Availability Zone B
+
+  SubnetPrivateB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref subnetPrivateAppBCIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "private", "b"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private", "B", "Subnet"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  SubnetPrivateBNACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref SubnetPrivateB
+
+  SubnetPrivateBRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateBRouteTable
+      SubnetId: !Ref SubnetPrivateB
+
+# Private App SUBNETS
+# Availability Zone C
+
+  SubnetPrivateC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs ]
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref subnetPrivateAppCCIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "private", "c"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private", "C", "Subnet"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  SubnetPrivateCNACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref SubnetPrivateC
+
+  SubnetPrivateCRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateCRouteTable
+      SubnetId: !Ref SubnetPrivateC
+
+
+  PrivateNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["nacl", !Ref prefix, "private"]]
+        - Key: Desc
+          Value: Private Network NACL
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+  InboundNACLEntryPrivate:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      Icmp:
+        Code: "-1"
+        Type: "-1"
+
+  OutboundNACLEntryPrivate:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      Icmp:
+        Code: "-1"
+        Type: "-1"
+
+# DB Private Subnets
+# Availability Zone A
+
+  SubnetPrivateDBA:
+    Type: AWS::EC2::Subnet
+    Condition: buildSubnetPrivateDbA
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref subnetPrivateDbACIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "private", "a", "db"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private", "A", "Subnet", "db"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+
+  SubnetPrivateDBANACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Condition: buildSubnetPrivateDbA
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref SubnetPrivateDBA
+
+  SubnetPrivateDBARouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: buildSubnetPrivateDbA
+    Properties:
+      RouteTableId: !Ref PrivateARouteTable
+      SubnetId: !Ref SubnetPrivateDBA
+
+# DB Private Subnets
+# Availability Zone B
+
+  SubnetPrivateDBB:
+    Type: AWS::EC2::Subnet
+    Condition: buildSubnetPrivateDbB
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs ]
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref subnetPrivateDbBCIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "private", "b", "db"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private", "B", "Subnet", "db"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+
+
+  SubnetPrivateDBBNACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Condition: buildSubnetPrivateDbB
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref SubnetPrivateDBB
+
+  SubnetPrivateDBBRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: buildSubnetPrivateDbB
+    Properties:
+      RouteTableId: !Ref PrivateBRouteTable
+      SubnetId: !Ref SubnetPrivateDBB
+
+# DB Private Subnets
+# Availability Zone C
+
+  SubnetPrivateDBC:
+    Type: AWS::EC2::Subnet
+    Condition: buildSubnetPrivateDbC
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs ]
+      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref subnetPrivateDbCCIDR
+      Tags:
+        - Key: Name
+          Value: !Join ["-", ["sn", !Ref prefix, "private", "c", "db"]]
+        - Key: Desc
+          Value: !Join [" ", [!Ref prefix, "Private", "C", "Subnet", "db"]]
+        - Key: Env
+          Value: !Ref env
+        - Key: Class
+          Value: !Ref class
+        - Key: Owner
+          Value: !Ref owner
+
+  SubnetPrivateDBCNACLAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Condition: buildSubnetPrivateDbC
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref SubnetPrivateDBC
+
+  SubnetPrivateDBCRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: buildSubnetPrivateDbC
+    Properties:
+      RouteTableId: !Ref PrivateCRouteTable
+      SubnetId: !Ref SubnetPrivateDBC
+
+Outputs:
+  VpcCIDR:
+    Description: VPC CIDR
+    Value: !Ref vpcCIDR

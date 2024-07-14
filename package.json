@@ -1,0 +1,15 @@
+{
+  "name": "aws-vpc-cfn",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=17.6.0"
+  },
+  "private": true,
+  "scripts": {
+    "generate:vpc:diagram": "mkdir -p drawio-assets && cfn-dia draw.io -t multi-tier-vpc.yaml -c -o drawio-assets/multi-tier-vpc.drawio",
+    "generate:vpc:html": "cfn-dia html -t multi-tier-vpc.yaml"
+  },
+  "dependencies": {
+    "@mhlabs/cfn-diagram": "^1.1.33"
+  }
+}

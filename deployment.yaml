@@ -1,0 +1,22 @@
+template-file-path: ./multi-tier-vpc.yaml
+
+parameters:
+  env: "TEST"
+  class: "PRIVATE"
+  owner: "me"
+  prefix: "sandbox"
+  keyname: "infrastructure-networking"
+
+  vpcCIDR: "10.5.0.0/21"
+  subnetPublicACIDR: "10.5.0.0/25"
+  subnetPublicBCIDR: "10.5.0.128/25"
+  subnetPublicCCIDR: "10.5.1.0/25"
+  subnetPrivateAppACIDR: "10.5.2.0/25"
+  subnetPrivateAppBCIDR: "10.5.2.128/25"
+  subnetPrivateAppCCIDR: "10.5.3.0/25"
+  subnetPrivateDbACIDR: "10.5.4.0/25"
+  subnetPrivateDbBCIDR: "10.5.4.128/25"
+  subnetPrivateDbCCIDR: "10.5.5.0/25"
+
+tags:
+  environment: "test"
