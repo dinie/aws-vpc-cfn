@@ -5,7 +5,8 @@ parameters:
   class: "PRIVATE"
   owner: "me"
   prefix: "sandbox"
-  keyname: "infrastructure-networking"
+  keyName: "infrastructure-networking"
+  flowlogBucketArn: ""
 
   vpcCIDR: "10.5.0.0/21"
   subnetPublicACIDR: "10.5.0.0/25"
