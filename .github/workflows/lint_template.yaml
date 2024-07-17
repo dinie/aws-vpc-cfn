@@ -1,0 +1,22 @@
+name: Lint Cloudformation templates
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.yaml'
+
+
+jobs:
+  lint-templates:
+    name: 'Run linting on cloudformation templates'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run CFN Nag for security checks
+        uses: stelligent/cfn_nag@master
+        with:
+          input_path: ./
