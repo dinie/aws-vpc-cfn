@@ -38,7 +38,7 @@ Metadata:
           - subnetPrivateDbBCIDR
           - subnetPrivateDbCCIDR
 
-      
+
     ParameterLabels:
       env:
         default: Environment
@@ -604,7 +604,6 @@ Resources:
 
 # Private App SUBNETS
 # Availability Zone A
-
   SubnetPrivateA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -637,7 +636,6 @@ Resources:
 
 # Private App SUBNETS
 # Availability Zone B
-
   SubnetPrivateB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -670,7 +668,6 @@ Resources:
 
 # Private App SUBNETS
 # Availability Zone C
-
   SubnetPrivateC:
     Type: AWS::EC2::Subnet
     Properties:
@@ -745,7 +742,6 @@ Resources:
 
 # DB Private Subnets
 # Availability Zone A
-
   SubnetPrivateDBA:
     Type: AWS::EC2::Subnet
     Condition: buildSubnetPrivateDbA
@@ -782,7 +778,6 @@ Resources:
 
 # DB Private Subnets
 # Availability Zone B
-
   SubnetPrivateDBB:
     Type: AWS::EC2::Subnet
     Condition: buildSubnetPrivateDbB
@@ -820,7 +815,6 @@ Resources:
 
 # DB Private Subnets
 # Availability Zone C
-
   SubnetPrivateDBC:
     Type: AWS::EC2::Subnet
     Condition: buildSubnetPrivateDbC
