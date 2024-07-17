@@ -1,6 +1,6 @@
 Version: "2012-10-17"
 Statement:
-  - Sid: VisualEditor0
+  - Sid: Statement1
     Effect: Allow
     Action:
       - ec2:*
@@ -21,9 +21,10 @@ Statement:
       - iam:GetInstanceProfile
     Resource:
       - '*'
-  - Sid: Statement1
+  - Sid: Statement2
     Effect: Allow
     Action:
       - iam:PassRole
+      - iam:GetRole
     Resource:
-      - '*'
+      - "arn:aws:iam::${AWS::AccountId}:role/nat-role-${prefix}"
