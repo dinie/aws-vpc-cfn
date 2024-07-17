@@ -7,7 +7,6 @@ on:
     paths:
       - '*.yaml'
 
-
 jobs:
   lint-templates:
     name: 'Run linting on cloudformation templates'
