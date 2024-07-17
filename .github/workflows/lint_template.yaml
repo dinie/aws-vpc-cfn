@@ -16,6 +16,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Run CFN Lint
+        uses: scottbrenner/cfn-lint-action@v2
+        with:
+          command: cfn-lint -t ./multi-tier-vpc.yaml
+
       - name: Run CFN Nag for security checks
         uses: stelligent/cfn_nag@master
         with:
