@@ -5,7 +5,6 @@ Description: VPC Flow Logs Bucket and access Roles and Policies
 Parameters:
   flowlogBucketName:
     Description: Bucket name used for the S3 bucket used for flow logs
-    Default: vpc-${AWS::Region}
     Type: String
 
 

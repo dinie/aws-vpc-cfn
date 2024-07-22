@@ -70,8 +70,8 @@ Metadata:
         default: EC2 keypair used for NAT instance
       amazonLinuxNatAmiId:
         default: AMI to use for NAT
-      flowlogBucketArn:
-        default: Bucket ARN for VPC Flow Logs. Leave blank for no flow logs
+      flowlogBucketName:
+        default: Bucket name for VPC Flow Logs. Leave blank for no flow logs
 
 Parameters:
   env:
@@ -178,22 +178,22 @@ Parameters:
     Description: AMI of machine used for NAT
     Default: ami-0b0eaeaa16fa45706
 
-  flowlogBucketArn:
+  flowlogBucketName:
     Type: String
-    Description: ARN of Bucket to be used for VPC Flow Logs. Leave blank for no flow logs
+    Description: Name of Bucket to be used for VPC Flow Logs. Leave blank for no flow logs
 
 Conditions:
   buildSubnetPrivateDbA: !Not [ !Equals [ !Ref subnetPrivateDbACIDR, "6.6.6.6/6"] ]
   buildSubnetPrivateDbB: !Not [ !Equals [ !Ref subnetPrivateDbBCIDR, "6.6.6.6/6"] ]
   buildSubnetPrivateDbC: !Not [ !Equals [ !Ref subnetPrivateDbCCIDR, "6.6.6.6/6"] ]
-  createVPCLogs: !Not [ !Equals [ !Ref flowlogBucketArn, ""] ]
+  createVPCLogs: !Not [ !Equals [ !Ref flowlogBucketName, ""] ]
 
 Resources:
   FlowLog:
     Type: AWS::EC2::FlowLog
     Condition: createVPCLogs
     Properties:
-      LogDestination: !Ref flowlogBucketArn
+      LogDestination: !Sub "arn:aws:s3:::${flowlogBucketName}"
       LogDestinationType: s3
       ResourceId: !Ref VPC
       ResourceType: VPC
@@ -853,3 +853,10 @@ Outputs:
   VpcCIDR:
     Description: VPC CIDR
     Value: !Ref vpcCIDR
+
+  VpcId:
+    Description: VPC ID
+    Value: !GetAtt VPC.VpcId
+    Export:
+      Name:
+        'Fn::Sub': '${prefix}-VPCID'
