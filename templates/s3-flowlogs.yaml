@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: VPC Flow Logs Bucket and access Roles and Policies
+
+Parameters:
+  flowlogBucketName:
+    Description: Bucket name used for the S3 bucket used for flow logs
+    Default: vpc-${AWS::Region}
+    Type: String
+
+
+Resources:
+  FlowLogsBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref flowlogBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+        - Status: Enabled
+          ExpirationInDays: 30
+      Tags:
+      - Key: Env
+        Value: PROD
+      - Key: Class
+        Value: RESTRICTED
+      - Key: Owner
+        Value: security
+
+
+  FlowLogsBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref FlowLogsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AWSLogDeliveryWrite
+            Effect: Allow
+            Principal:
+              Service: delivery.logs.amazonaws.com
+            Action: s3:PutObject
+            Resource:
+            - !Join ["", ["arn:aws:s3:::", !Ref FlowLogsBucket, "/*"]]
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+          - Sid: AWSLogDeliveryAclCheck
+            Effect: Allow
+            Principal:
+              Service: delivery.logs.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !Join ["", ["arn:aws:s3:::", !Ref FlowLogsBucket]]
+
+Outputs:
+  FlowLogBucketArn:
+    Description: Flow log bucket ARN
+    Value: !GetAtt FlowLogsBucket.Arn
+    Export:
+      Name:
+        'Fn::Sub': '${AWS::StackName}-FlowLogBucketArn'

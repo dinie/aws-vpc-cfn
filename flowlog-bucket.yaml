@@ -1,0 +1,4 @@
+template-file-path: ./templates/s3-flowlogs.yaml
+
+parameters:
+  flowlogBucketName: "flowlogs-sandbox-vpc-me-test"
