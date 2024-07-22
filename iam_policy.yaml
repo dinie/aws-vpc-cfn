@@ -4,6 +4,7 @@ Statement:
     Effect: Allow
     Action:
       - ec2:*
+      - s3:*
       - iam:CreateRole
       - iam:DetachRolePolicy
       - iam:DeleteRole
@@ -19,6 +20,7 @@ Statement:
       - iam:TagInstanceProfile
       - iam:UntagInstanceProfile
       - iam:GetInstanceProfile
+      - logs:CreateLogDelivery
     Resource:
       - '*'
   - Sid: Statement2
